@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-namespace AudioSubtitle
+namespace Audio
 {
     /// <summary>
     /// TextMeshProを使用した字幕表示コンポーネント

@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace AudioSubtitle
+namespace Audio
 {
     /// <summary>
     /// AudioSourceを使用した音声再生コンポーネント

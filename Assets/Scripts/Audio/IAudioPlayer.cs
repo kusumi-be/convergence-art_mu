@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace AudioSubtitle
+namespace Audio
 {
     /// <summary>
     /// 音声再生のインターフェース

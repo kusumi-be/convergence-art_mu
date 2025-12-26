@@ -1,4 +1,4 @@
-namespace AudioSubtitle
+namespace Audio
 {
     /// <summary>
     /// 字幕表示のインターフェース

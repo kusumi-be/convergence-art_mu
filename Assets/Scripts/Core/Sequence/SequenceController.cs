@@ -1,25 +1,20 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace AudioSubtitle.Core
+namespace Core.Sequence
 {
     /// <summary>
     /// 汎用的なシーケンス管理クラス
-    /// 任意のデータ型のリストを順次実行し、イベントを発火する
+    /// ISequenceStepのリストを順次実行し、イベントを発火する
+    /// 具体的な処理内容は知らず、ステップの進行のみを管理する
     /// </summary>
-    /// <typeparam name="T">シーケンスで扱うデータの型</typeparam>
-    [Serializable]
-    public class SequenceController<T>
+    public class SequenceController
     {
         [SerializeField]
-        private List<T> items = new List<T>();
-
-        [SerializeField]
         [Tooltip("各ステップ間の待機時間（秒）")]
-        private float intervalBetweenSteps = 1f;
+        private float intervalBetweenSteps = 0f;
 
         // イベント
         public UnityEvent OnSequenceStart = new UnityEvent();
@@ -29,15 +24,7 @@ namespace AudioSubtitle.Core
 
         private int currentIndex = -1;
         private bool isPlaying = false;
-
-        /// <summary>
-        /// アイテムのリスト（Inspector編集用）
-        /// </summary>
-        public List<T> Items
-        {
-            get => items;
-            set => items = value;
-        }
+        private List<ISequenceStep> steps = new List<ISequenceStep>();
 
         /// <summary>
         /// ステップ間の間隔
@@ -59,17 +46,42 @@ namespace AudioSubtitle.Core
         public bool IsPlaying => isPlaying;
 
         /// <summary>
-        /// アイテムの総数
+        /// ステップの総数
         /// </summary>
-        public int Count => items.Count;
+        public int Count => steps.Count;
+
+        /// <summary>
+        /// ステップのリスト
+        /// </summary>
+        public List<ISequenceStep> Steps
+        {
+            get => steps;
+            set => steps = value ?? new List<ISequenceStep>();
+        }
+
+        /// <summary>
+        /// ステップを追加
+        /// </summary>
+        public void AddStep(ISequenceStep step)
+        {
+            if (step != null)
+            {
+                steps.Add(step);
+            }
+        }
+
+        /// <summary>
+        /// ステップをクリア
+        /// </summary>
+        public void ClearSteps()
+        {
+            steps.Clear();
+        }
 
         /// <summary>
         /// シーケンスを開始する
         /// </summary>
-        /// <param name="monoBehaviour">コルーチンを実行するMonoBehaviour</param>
-        /// <param name="stepAction">各ステップで実行するアクション</param>
-        /// <returns>コルーチン</returns>
-        public IEnumerator PlaySequence(MonoBehaviour monoBehaviour, Func<T, IEnumerator> stepAction)
+        public IEnumerator PlaySequence()
         {
             if (isPlaying)
             {
@@ -77,9 +89,9 @@ namespace AudioSubtitle.Core
                 yield break;
             }
 
-            if (items == null || items.Count == 0)
+            if (steps == null || steps.Count == 0)
             {
-                Debug.LogWarning("No items in sequence.");
+                Debug.LogWarning("No steps in sequence.");
                 yield break;
             }
 
@@ -88,19 +100,19 @@ namespace AudioSubtitle.Core
 
             OnSequenceStart?.Invoke();
 
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < steps.Count; i++)
             {
                 currentIndex = i;
 
                 OnStepStart?.Invoke(i);
 
-                // 各ステップのアクションを実行
-                yield return monoBehaviour.StartCoroutine(stepAction(items[i]));
+                // 各ステップを実行（具体的な処理は知らない）
+                yield return steps[i].Execute();
 
                 OnStepEnd?.Invoke(i);
 
                 // 最後のステップでない場合は間隔を待つ
-                if (i < items.Count - 1)
+                if (i < steps.Count - 1)
                 {
                     yield return new WaitForSeconds(intervalBetweenSteps);
                 }
@@ -122,15 +134,15 @@ namespace AudioSubtitle.Core
         }
 
         /// <summary>
-        /// 特定のインデックスのアイテムを取得
+        /// 特定のインデックスのステップを取得
         /// </summary>
-        public T GetItem(int index)
+        public ISequenceStep GetStep(int index)
         {
-            if (index < 0 || index >= items.Count)
+            if (index < 0 || index >= steps.Count)
             {
-                throw new ArgumentOutOfRangeException(nameof(index));
+                return null;
             }
-            return items[index];
+            return steps[index];
         }
     }
 }

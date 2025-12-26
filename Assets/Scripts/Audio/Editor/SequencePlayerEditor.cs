@@ -1,20 +1,20 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace AudioSubtitle.Editor
+namespace Audio.Editor
 {
     /// <summary>
-    /// AudioSubtitleBehaviourのカスタムエディター
+    /// SequencePlayerのカスタムエディター
     /// Inspector上に再生/停止ボタンを表示する
     /// </summary>
-    [CustomEditor(typeof(AudioSubtitleBehaviour))]
-    public class AudioSubtitleBehaviourEditor : UnityEditor.Editor
+    [CustomEditor(typeof(SequencePlayer))]
+    public class SequencePlayerEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
 
-            AudioSubtitleBehaviour behaviour = (AudioSubtitleBehaviour)target;
+            SequencePlayer player = (SequencePlayer)target;
 
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("Playback Controls", EditorStyles.boldLabel);
@@ -26,13 +26,13 @@ namespace AudioSubtitle.Editor
             // 再生ボタン
             if (GUILayout.Button("Play", GUILayout.Height(30)))
             {
-                behaviour.Play();
+                player.Play();
             }
 
             // 停止ボタン
             if (GUILayout.Button("Stop", GUILayout.Height(30)))
             {
-                behaviour.Stop();
+                player.Stop();
             }
 
             EditorGUILayout.EndHorizontal();
@@ -41,8 +41,13 @@ namespace AudioSubtitle.Editor
             if (Application.isPlaying)
             {
                 EditorGUILayout.Space(5);
-                string status = behaviour.IsPlaying ? "Playing..." : "Stopped";
+                string status = player.IsPlaying ? "Playing..." : "Stopped";
                 EditorGUILayout.LabelField("Status:", status);
+
+                if (player.Controller != null)
+                {
+                    EditorGUILayout.LabelField("Current Step:", $"{player.Controller.CurrentIndex + 1} / {player.Controller.Count}");
+                }
             }
             else
             {

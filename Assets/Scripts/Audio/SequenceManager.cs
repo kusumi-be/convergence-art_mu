@@ -6,23 +6,14 @@ using Core.Sequence;
 namespace Audio
 {
     /// <summary>
-    /// シーケンスを再生するMonoBehaviourコンポーネント
-    /// ISequenceStepのリストを管理し、順次再生する
+    /// シーケンス管理クラス
+    /// ISequenceStepのリストを管理し、順次実行する
     /// </summary>
-    public class SequencePlayer : MonoBehaviour
+    public class SequenceManager : MonoBehaviour
     {
-        [Header("Components")]
-        [SerializeField]
-        [Tooltip("音声再生コンポーネント")]
-        private AudioPlayerComponent audioPlayer;
-
-        [SerializeField]
-        [Tooltip("字幕表示コンポーネント")]
-        private SubtitleDisplayTMP subtitleDisplay;
-
         [Header("Sequence Settings")]
         [SerializeReference]
-        [Tooltip("シーケンスステップのリスト（ISequenceStep）")]
+        [Tooltip("シーケンスステップのリスト（各管理クラス）")]
         private List<ISequenceStep> steps = new List<ISequenceStep>();
 
         [SerializeField]
@@ -44,32 +35,7 @@ namespace Audio
 
         private void Awake()
         {
-            ValidateComponents();
             InitializeController();
-        }
-
-        /// <summary>
-        /// コンポーネントの検証
-        /// </summary>
-        private void ValidateComponents()
-        {
-            if (audioPlayer == null)
-            {
-                audioPlayer = GetComponent<AudioPlayerComponent>();
-                if (audioPlayer == null)
-                {
-                    Debug.LogWarning("AudioPlayerComponent is not assigned. Audio playback will not work.");
-                }
-            }
-
-            if (subtitleDisplay == null)
-            {
-                subtitleDisplay = GetComponent<SubtitleDisplayTMP>();
-                if (subtitleDisplay == null)
-                {
-                    Debug.LogWarning("SubtitleDisplayTMP is not assigned. Subtitle display will not work.");
-                }
-            }
         }
 
         /// <summary>
@@ -83,7 +49,7 @@ namespace Audio
         }
 
         /// <summary>
-        /// ステップを準備（各ステップに必要なコンポーネントを設定）
+        /// ステップを準備
         /// </summary>
         private void PrepareSteps()
         {
@@ -94,20 +60,10 @@ namespace Audio
 
             foreach (var step in steps)
             {
-                if (step == null)
-                    continue;
-
-                // 各ステップの型に応じて必要なコンポーネントを設定
-                if (step is AudioSequenceStep audioStep)
+                if (step != null)
                 {
-                    audioStep.SetAudioPlayer(audioPlayer);
+                    sequenceController.AddStep(step);
                 }
-                else if (step is SubtitleSequenceStep subtitleStep)
-                {
-                    subtitleStep.SetSubtitleDisplay(subtitleDisplay);
-                }
-
-                sequenceController.AddStep(step);
             }
         }
 
@@ -140,8 +96,6 @@ namespace Audio
             }
 
             sequenceController?.Stop();
-            audioPlayer?.Stop();
-            subtitleDisplay?.HideSubtitle();
         }
 
         /// <summary>

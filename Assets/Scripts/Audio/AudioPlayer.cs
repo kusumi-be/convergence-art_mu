@@ -7,7 +7,7 @@ namespace Audio
     /// AudioSourceを使用した音声再生コンポーネント
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
-    public class AudioPlayerComponent : MonoBehaviour, IAudioPlayer
+    public class AudioPlayer : MonoBehaviour
     {
         private AudioSource audioSource;
 

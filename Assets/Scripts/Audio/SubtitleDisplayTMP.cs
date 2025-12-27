@@ -6,7 +6,7 @@ namespace Audio
     /// <summary>
     /// TextMeshProを使用した字幕表示コンポーネント
     /// </summary>
-    public class SubtitleDisplayTMP : MonoBehaviour, ISubtitleDisplay
+    public class SubtitleDisplayTMP : MonoBehaviour
     {
         [SerializeField]
         [Tooltip("字幕を表示するTextMeshProコンポーネント（3D or UGUI）")]

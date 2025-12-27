@@ -7,7 +7,7 @@ namespace Audio
 {
     /// <summary>
     /// シーケンスを再生するMonoBehaviourコンポーネント
-    /// 音声と字幕のステップをInspectorで設定し、順次再生する
+    /// ISequenceStepのリストを管理し、順次再生する
     /// </summary>
     public class SequencePlayer : MonoBehaviour
     {
@@ -21,13 +21,9 @@ namespace Audio
         private SubtitleDisplayTMP subtitleDisplay;
 
         [Header("Sequence Settings")]
-        [SerializeField]
-        [Tooltip("音声ステップのリスト")]
-        private List<AudioSequenceStep> audioSteps = new List<AudioSequenceStep>();
-
-        [SerializeField]
-        [Tooltip("字幕ステップのリスト")]
-        private List<SubtitleSequenceStep> subtitleSteps = new List<SubtitleSequenceStep>();
+        [SerializeReference]
+        [Tooltip("シーケンスステップのリスト（ISequenceStep）")]
+        private List<ISequenceStep> steps = new List<ISequenceStep>();
 
         [SerializeField]
         [Tooltip("各ステップ間の待機時間（秒）")]
@@ -83,35 +79,35 @@ namespace Audio
         {
             sequenceController = new SequenceController();
             sequenceController.IntervalBetweenSteps = intervalBetweenSteps;
-            BuildSequence();
+            PrepareSteps();
         }
 
         /// <summary>
-        /// シーケンスを構築
-        /// 音声と字幕のステップを組み合わせてシーケンスを作成
+        /// ステップを準備（各ステップに必要なコンポーネントを設定）
         /// </summary>
-        private void BuildSequence()
+        private void PrepareSteps()
         {
             sequenceController.ClearSteps();
 
-            // 音声ステップにプレイヤーを設定して追加
-            foreach (var audioStep in audioSteps)
+            if (steps == null)
+                return;
+
+            foreach (var step in steps)
             {
-                if (audioStep != null)
+                if (step == null)
+                    continue;
+
+                // 各ステップの型に応じて必要なコンポーネントを設定
+                if (step is AudioSequenceStep audioStep)
                 {
                     audioStep.SetAudioPlayer(audioPlayer);
-                    sequenceController.AddStep(audioStep);
                 }
-            }
-
-            // 字幕ステップにディスプレイを設定して追加
-            foreach (var subtitleStep in subtitleSteps)
-            {
-                if (subtitleStep != null)
+                else if (step is SubtitleSequenceStep subtitleStep)
                 {
                     subtitleStep.SetSubtitleDisplay(subtitleDisplay);
-                    sequenceController.AddStep(subtitleStep);
                 }
+
+                sequenceController.AddStep(step);
             }
         }
 
@@ -126,8 +122,8 @@ namespace Audio
                 return;
             }
 
-            // シーケンスを再構築（Inspector で変更された場合に対応）
-            BuildSequence();
+            // ステップを再準備（Inspector で変更された場合に対応）
+            PrepareSteps();
 
             playCoroutine = StartCoroutine(PlaySequenceCoroutine());
         }
@@ -167,6 +163,26 @@ namespace Audio
             {
                 sequenceController.IntervalBetweenSteps = interval;
             }
+        }
+
+        /// <summary>
+        /// ステップを追加（プログラムから動的に追加する場合）
+        /// </summary>
+        public void AddStep(ISequenceStep step)
+        {
+            if (step != null)
+            {
+                steps.Add(step);
+            }
+        }
+
+        /// <summary>
+        /// ステップをクリア
+        /// </summary>
+        public void ClearSteps()
+        {
+            steps.Clear();
+            sequenceController?.ClearSteps();
         }
     }
 }

@@ -16,10 +16,6 @@ namespace Audio
         [Tooltip("表示する字幕テキスト")]
         private string subtitleText;
 
-        [SerializeField]
-        [Tooltip("字幕の表示時間（秒）。0の場合は次のステップまで表示し続ける")]
-        private float displayDuration = 0f;
-
         private ISubtitleDisplay subtitleDisplay;
 
         /// <summary>
@@ -29,15 +25,6 @@ namespace Audio
         {
             get => subtitleText;
             set => subtitleText = value;
-        }
-
-        /// <summary>
-        /// 表示時間
-        /// </summary>
-        public float DisplayDuration
-        {
-            get => displayDuration;
-            set => displayDuration = Mathf.Max(0f, value);
         }
 
         /// <summary>
@@ -67,12 +54,8 @@ namespace Audio
 
             subtitleDisplay.ShowSubtitle(subtitleText);
 
-            // 表示時間が指定されている場合は待機
-            if (displayDuration > 0f)
-            {
-                yield return new WaitForSeconds(displayDuration);
-                subtitleDisplay.HideSubtitle();
-            }
+            // 字幕は表示したまま（次のステップまたはシーケンス終了まで）
+            yield break;
         }
 
         /// <summary>

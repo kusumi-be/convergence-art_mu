@@ -31,19 +31,14 @@ namespace Audio
         }
 
         /// <summary>
-        /// ステップを実行（現在のインデックスの音声を再生）
+        /// ステップを実行（指定されたインデックスの音声を再生）
         /// </summary>
-        public override IEnumerator Execute()
+        /// <param name="index">再生する音声クリップのインデックス</param>
+        public override IEnumerator Execute(int index)
         {
-            if (audioClips == null || audioClips.Count == 0)
+            if (audioClips == null || index < 0 || index >= audioClips.Count)
             {
-                Debug.LogWarning("No audio clips in AudioManager.");
-                yield break;
-            }
-
-            if (currentIndex >= audioClips.Count)
-            {
-                Debug.LogWarning("AudioManager: Current index exceeds audio clips count.");
+                Debug.LogWarning($"AudioManager: Index {index} is out of range (Count: {audioClips?.Count ?? 0}).");
                 yield break;
             }
 
@@ -53,21 +48,11 @@ namespace Audio
                 yield break;
             }
 
-            AudioClip clip = audioClips[currentIndex];
+            AudioClip clip = audioClips[index];
             if (clip != null)
             {
                 yield return audioPlayer.Play(clip);
             }
-
-            currentIndex++;
-        }
-
-        /// <summary>
-        /// インデックスをリセット
-        /// </summary>
-        public void Reset()
-        {
-            currentIndex = 0;
         }
     }
 }

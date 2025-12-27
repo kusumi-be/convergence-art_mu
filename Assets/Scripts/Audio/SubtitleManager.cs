@@ -31,19 +31,14 @@ namespace Audio
         }
 
         /// <summary>
-        /// ステップを実行（現在のインデックスの字幕を表示）
+        /// ステップを実行（指定されたインデックスの字幕を表示）
         /// </summary>
-        public override IEnumerator Execute()
+        /// <param name="index">表示する字幕のインデックス</param>
+        public override IEnumerator Execute(int index)
         {
-            if (subtitles == null || subtitles.Count == 0)
+            if (subtitles == null || index < 0 || index >= subtitles.Count)
             {
-                Debug.LogWarning("No subtitles in SubtitleManager.");
-                yield break;
-            }
-
-            if (currentIndex >= subtitles.Count)
-            {
-                Debug.LogWarning("SubtitleManager: Current index exceeds subtitles count.");
+                Debug.LogWarning($"SubtitleManager: Index {index} is out of range (Count: {subtitles?.Count ?? 0}).");
                 yield break;
             }
 
@@ -53,24 +48,14 @@ namespace Audio
                 yield break;
             }
 
-            string subtitle = subtitles[currentIndex];
+            string subtitle = subtitles[index];
             if (!string.IsNullOrEmpty(subtitle))
             {
                 subtitleDisplay.ShowSubtitle(subtitle);
             }
 
-            currentIndex++;
-
             // 字幕は表示したまま（次のステップまたはシーケンス終了まで）
             yield break;
-        }
-
-        /// <summary>
-        /// インデックスをリセット
-        /// </summary>
-        public void Reset()
-        {
-            currentIndex = 0;
         }
     }
 }

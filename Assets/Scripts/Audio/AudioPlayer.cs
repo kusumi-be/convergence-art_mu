@@ -11,6 +11,10 @@ namespace Audio
     {
         private AudioSource audioSource;
 
+        [SerializeField]
+        [Tooltip("フェードイン/アウトの時間（秒）")]
+        private float fadeDuration = 1f;
+
         private void Awake()
         {
             audioSource = GetComponent<AudioSource>();
@@ -36,6 +40,71 @@ namespace Audio
 
             // 音声の長さ分待機
             yield return new WaitForSeconds(clip.length);
+        }
+
+        /// <summary>
+        /// フェード付きで音声を再生する（BGM用）
+        /// 前の音声をフェードアウトしながら、新しい音声をフェードインする
+        /// </summary>
+        public IEnumerator PlayWithFade(AudioClip clip, bool loop = true)
+        {
+            if (clip == null)
+            {
+                Debug.LogWarning("AudioClip is null. Skipping playback.");
+                yield break;
+            }
+
+            // フェードアウト
+            if (audioSource.isPlaying)
+            {
+                yield return FadeOut(fadeDuration);
+            }
+
+            // 新しいクリップをセット
+            audioSource.clip = clip;
+            audioSource.loop = loop;
+            audioSource.volume = 0f;
+            audioSource.Play();
+
+            // フェードイン
+            yield return FadeIn(fadeDuration);
+        }
+
+        /// <summary>
+        /// フェードイン
+        /// </summary>
+        private IEnumerator FadeIn(float duration)
+        {
+            float currentTime = 0f;
+            audioSource.volume = 0f;
+
+            while (currentTime < duration)
+            {
+                currentTime += Time.deltaTime;
+                audioSource.volume = Mathf.Lerp(0f, 1f, currentTime / duration);
+                yield return null;
+            }
+
+            audioSource.volume = 1f;
+        }
+
+        /// <summary>
+        /// フェードアウト
+        /// </summary>
+        private IEnumerator FadeOut(float duration)
+        {
+            float startVolume = audioSource.volume;
+            float currentTime = 0f;
+
+            while (currentTime < duration)
+            {
+                currentTime += Time.deltaTime;
+                audioSource.volume = Mathf.Lerp(startVolume, 0f, currentTime / duration);
+                yield return null;
+            }
+
+            audioSource.volume = 0f;
+            audioSource.Stop();
         }
 
         /// <summary>

@@ -7,8 +7,8 @@ namespace Core.Sequence
 {
     /// <summary>
     /// 汎用的なシーケンス管理クラス
-    /// SequenceStepのリストを順次実行し、イベントを発火する
-    /// 具体的な処理内容は知らず、ステップの進行のみを管理する
+    /// 複数のマネージャーを管理し、シーケンスインデックスに基づいて並行実行する
+    /// 具体的な処理内容は知らず、シーケンスの進行のみを管理する
     /// </summary>
     public class SequenceController
     {
@@ -22,9 +22,9 @@ namespace Core.Sequence
         public UnityEvent<int> OnStepEnd = new UnityEvent<int>();
         public UnityEvent OnSequenceComplete = new UnityEvent();
 
-        private int currentIndex = -1;
+        private int currentSequenceIndex = -1;
         private bool isPlaying = false;
-        private List<SequenceStep> steps = new List<SequenceStep>();
+        private List<SequenceStep> managers = new List<SequenceStep>();
 
         /// <summary>
         /// ステップ間の間隔
@@ -36,9 +36,9 @@ namespace Core.Sequence
         }
 
         /// <summary>
-        /// 現在のインデックス
+        /// 現在のシーケンスインデックス
         /// </summary>
-        public int CurrentIndex => currentIndex;
+        public int CurrentSequenceIndex => currentSequenceIndex;
 
         /// <summary>
         /// 再生中かどうか
@@ -46,42 +46,42 @@ namespace Core.Sequence
         public bool IsPlaying => isPlaying;
 
         /// <summary>
-        /// ステップの総数
+        /// マネージャーの総数
         /// </summary>
-        public int Count => steps.Count;
+        public int ManagerCount => managers.Count;
 
         /// <summary>
-        /// ステップのリスト
+        /// マネージャーのリスト
         /// </summary>
-        public List<SequenceStep> Steps
+        public List<SequenceStep> Managers
         {
-            get => steps;
-            set => steps = value ?? new List<SequenceStep>();
+            get => managers;
+            set => managers = value ?? new List<SequenceStep>();
         }
 
         /// <summary>
-        /// ステップを追加
+        /// マネージャーを追加
         /// </summary>
-        public void AddStep(SequenceStep step)
+        public void AddManager(SequenceStep manager)
         {
-            if (step != null)
+            if (manager != null)
             {
-                steps.Add(step);
+                managers.Add(manager);
             }
         }
 
         /// <summary>
-        /// ステップをクリア
+        /// マネージャーをクリア
         /// </summary>
-        public void ClearSteps()
+        public void ClearManagers()
         {
-            steps.Clear();
+            managers.Clear();
         }
 
         /// <summary>
-        /// シーケンスを開始する
+        /// シーケンスを開始する（全マネージャーの最大要素数まで実行）
         /// </summary>
-        public IEnumerator PlaySequence()
+        public IEnumerator PlaySequence(int maxSequenceCount)
         {
             if (isPlaying)
             {
@@ -89,39 +89,66 @@ namespace Core.Sequence
                 yield break;
             }
 
-            if (steps == null || steps.Count == 0)
+            if (managers == null || managers.Count == 0)
             {
-                Debug.LogWarning("No steps in sequence.");
+                Debug.LogWarning("No managers in sequence.");
                 yield break;
             }
 
             isPlaying = true;
-            currentIndex = -1;
+            currentSequenceIndex = -1;
 
             OnSequenceStart?.Invoke();
 
-            for (int i = 0; i < steps.Count; i++)
+            // シーケンスインデックス 0 から maxSequenceCount - 1 まで実行
+            for (int sequenceIndex = 0; sequenceIndex < maxSequenceCount; sequenceIndex++)
             {
-                currentIndex = i;
+                currentSequenceIndex = sequenceIndex;
 
-                OnStepStart?.Invoke(i);
+                OnStepStart?.Invoke(sequenceIndex);
 
-                // 各ステップを実行（具体的な処理は知らない）
-                yield return steps[i].Execute();
+                // 全てのマネージャーを並行実行
+                foreach (var manager in managers)
+                {
+                    if (manager != null)
+                    {
+                        yield return manager.Execute(sequenceIndex);
+                    }
+                }
 
-                OnStepEnd?.Invoke(i);
+                OnStepEnd?.Invoke(sequenceIndex);
 
-                // 最後のステップでない場合は間隔を待つ
-                if (i < steps.Count - 1)
+                // 最後のシーケンスでない場合は間隔を待つ
+                if (sequenceIndex < maxSequenceCount - 1)
                 {
                     yield return new WaitForSeconds(intervalBetweenSteps);
                 }
             }
 
             isPlaying = false;
-            currentIndex = -1;
+            currentSequenceIndex = -1;
 
             OnSequenceComplete?.Invoke();
+        }
+
+        /// <summary>
+        /// 特定のシーケンスインデックスを実行
+        /// </summary>
+        public IEnumerator ExecuteSequenceIndex(int sequenceIndex)
+        {
+            if (managers == null || managers.Count == 0)
+            {
+                Debug.LogWarning("No managers in sequence.");
+                yield break;
+            }
+
+            foreach (var manager in managers)
+            {
+                if (manager != null)
+                {
+                    yield return manager.Execute(sequenceIndex);
+                }
+            }
         }
 
         /// <summary>
@@ -130,19 +157,7 @@ namespace Core.Sequence
         public void Stop()
         {
             isPlaying = false;
-            currentIndex = -1;
-        }
-
-        /// <summary>
-        /// 特定のインデックスのステップを取得
-        /// </summary>
-        public SequenceStep GetStep(int index)
-        {
-            if (index < 0 || index >= steps.Count)
-            {
-                return null;
-            }
-            return steps[index];
+            currentSequenceIndex = -1;
         }
     }
 }

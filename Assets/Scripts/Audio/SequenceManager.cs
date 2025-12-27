@@ -7,27 +7,27 @@ namespace Audio
 {
     /// <summary>
     /// シーケンス管理クラス
-    /// SequenceStepのリストを管理し、順次実行する
+    /// 複数のマネージャーを管理し、シーケンスインデックスに基づいて並行実行する
     /// </summary>
     public class SequenceManager : MonoBehaviour
     {
         [Header("Sequence Settings")]
         [SerializeField]
-        [Tooltip("シーケンスステップのリスト（AudioManager、SubtitleManager など）")]
-        private List<SequenceStep> steps = new List<SequenceStep>();
+        [Tooltip("マネージャーのリスト（AudioManager、SubtitleManager、BGMManager など）")]
+        private List<SequenceStep> managers = new List<SequenceStep>();
 
         [SerializeField]
-        [Tooltip("各ステップ間の待機時間（秒）")]
+        [Tooltip("各シーケンス間の待機時間（秒）")]
         private float intervalBetweenSteps = 1f;
 
         [Header("Manual Control")]
         [SerializeField]
-        [Tooltip("現在のステップインデックス（Inspector で変更すると該当ステップを実行）")]
-        private int currentStepIndex = 0;
+        [Tooltip("現在のシーケンスインデックス（Inspector で変更すると該当インデックスを実行）")]
+        private int currentSequenceIndex = 0;
 
         private SequenceController sequenceController;
         private Coroutine playCoroutine;
-        private int previousStepIndex = -1;
+        private int previousSequenceIndex = -1;
 
         /// <summary>
         /// シーケンスコントローラー
@@ -46,14 +46,14 @@ namespace Audio
 
         private void OnValidate()
         {
-            // Inspector で currentStepIndex が変更されたら実行
-            if (Application.isPlaying && currentStepIndex != previousStepIndex)
+            // Inspector で currentSequenceIndex が変更されたら実行
+            if (Application.isPlaying && currentSequenceIndex != previousSequenceIndex)
             {
-                if (currentStepIndex >= 0 && currentStepIndex < steps.Count)
+                if (currentSequenceIndex >= 0)
                 {
-                    StartCoroutine(ExecuteStep(currentStepIndex));
+                    StartCoroutine(ExecuteSequenceIndex(currentSequenceIndex));
                 }
-                previousStepIndex = currentStepIndex;
+                previousSequenceIndex = currentSequenceIndex;
             }
         }
 
@@ -64,24 +64,24 @@ namespace Audio
         {
             sequenceController = new SequenceController();
             sequenceController.IntervalBetweenSteps = intervalBetweenSteps;
-            PrepareSteps();
+            PrepareManagers();
         }
 
         /// <summary>
-        /// ステップを準備
+        /// マネージャーを準備
         /// </summary>
-        private void PrepareSteps()
+        private void PrepareManagers()
         {
-            sequenceController.ClearSteps();
+            sequenceController.ClearManagers();
 
-            if (steps == null)
+            if (managers == null)
                 return;
 
-            foreach (var step in steps)
+            foreach (var manager in managers)
             {
-                if (step != null)
+                if (manager != null)
                 {
-                    sequenceController.AddStep(step);
+                    sequenceController.AddManager(manager);
                 }
             }
         }
@@ -97,8 +97,8 @@ namespace Audio
                 return;
             }
 
-            // ステップを再準備（Inspector で変更された場合に対応）
-            PrepareSteps();
+            // マネージャーを再準備（Inspector で変更された場合に対応）
+            PrepareManagers();
 
             playCoroutine = StartCoroutine(PlaySequenceCoroutine());
         }
@@ -122,8 +122,39 @@ namespace Audio
         /// </summary>
         private IEnumerator PlaySequenceCoroutine()
         {
-            yield return sequenceController.PlaySequence();
+            // 全マネージャーの最大要素数を計算
+            int maxCount = GetMaxElementCount();
+            yield return sequenceController.PlaySequence(maxCount);
             playCoroutine = null;
+        }
+
+        /// <summary>
+        /// 全マネージャーの中で最大の要素数を取得
+        /// </summary>
+        private int GetMaxElementCount()
+        {
+            int maxCount = 0;
+
+            foreach (var manager in managers)
+            {
+                if (manager == null) continue;
+
+                // 各マネージャーの型に応じて要素数を取得
+                if (manager is AudioManager audioManager)
+                {
+                    maxCount = Mathf.Max(maxCount, audioManager.AudioClips?.Count ?? 0);
+                }
+                else if (manager is SubtitleManager subtitleManager)
+                {
+                    maxCount = Mathf.Max(maxCount, subtitleManager.Subtitles?.Count ?? 0);
+                }
+                else if (manager is BGMManager bgmManager)
+                {
+                    maxCount = Mathf.Max(maxCount, bgmManager.BGMClips?.Count ?? 0);
+                }
+            }
+
+            return maxCount;
         }
 
         /// <summary>
@@ -139,41 +170,37 @@ namespace Audio
         }
 
         /// <summary>
-        /// ステップを追加（プログラムから動的に追加する場合）
+        /// マネージャーを追加（プログラムから動的に追加する場合）
         /// </summary>
-        public void AddStep(SequenceStep step)
+        public void AddManager(SequenceStep manager)
         {
-            if (step != null)
+            if (manager != null)
             {
-                steps.Add(step);
+                managers.Add(manager);
             }
         }
 
         /// <summary>
-        /// ステップをクリア
+        /// マネージャーをクリア
         /// </summary>
-        public void ClearSteps()
+        public void ClearManagers()
         {
-            steps.Clear();
-            sequenceController?.ClearSteps();
+            managers.Clear();
+            sequenceController?.ClearManagers();
         }
 
         /// <summary>
-        /// 特定のステップを実行
+        /// 特定のシーケンスインデックスを実行（全マネージャーで該当インデックスを実行）
         /// </summary>
-        private IEnumerator ExecuteStep(int index)
+        private IEnumerator ExecuteSequenceIndex(int sequenceIndex)
         {
-            if (index < 0 || index >= steps.Count)
+            if (sequenceIndex < 0)
             {
-                Debug.LogWarning($"Step index {index} is out of range.");
+                Debug.LogWarning($"Sequence index {sequenceIndex} is invalid.");
                 yield break;
             }
 
-            SequenceStep step = steps[index];
-            if (step != null)
-            {
-                yield return step.Execute();
-            }
+            yield return sequenceController.ExecuteSequenceIndex(sequenceIndex);
         }
     }
 }

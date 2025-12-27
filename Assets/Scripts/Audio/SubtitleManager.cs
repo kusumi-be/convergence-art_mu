@@ -12,6 +12,7 @@ namespace Audio
     public class SubtitleManager : SequenceStep
     {
         [SerializeField]
+        [TextArea(3, 10)]
         [Tooltip("表示する字幕テキストのリスト")]
         private List<string> subtitles = new List<string>();
 

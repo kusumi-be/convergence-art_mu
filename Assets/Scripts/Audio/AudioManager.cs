@@ -11,7 +11,7 @@ namespace Audio
     /// 複数の音声を管理し、シーケンスに従って順次再生する
     /// </summary>
     [Serializable]
-    public class AudioManager : ISequenceStep
+    public class AudioManager : SequenceStep
     {
         [SerializeField]
         [Tooltip("再生する音声クリップのリスト")]
@@ -35,7 +35,7 @@ namespace Audio
         /// <summary>
         /// ステップを実行（現在のインデックスの音声を再生）
         /// </summary>
-        public IEnumerator Execute()
+        public override IEnumerator Execute()
         {
             if (audioClips == null || audioClips.Count == 0)
             {

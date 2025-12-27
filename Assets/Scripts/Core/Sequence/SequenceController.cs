@@ -7,7 +7,7 @@ namespace Core.Sequence
 {
     /// <summary>
     /// 汎用的なシーケンス管理クラス
-    /// ISequenceStepのリストを順次実行し、イベントを発火する
+    /// SequenceStepのリストを順次実行し、イベントを発火する
     /// 具体的な処理内容は知らず、ステップの進行のみを管理する
     /// </summary>
     public class SequenceController
@@ -24,7 +24,7 @@ namespace Core.Sequence
 
         private int currentIndex = -1;
         private bool isPlaying = false;
-        private List<ISequenceStep> steps = new List<ISequenceStep>();
+        private List<SequenceStep> steps = new List<SequenceStep>();
 
         /// <summary>
         /// ステップ間の間隔
@@ -53,16 +53,16 @@ namespace Core.Sequence
         /// <summary>
         /// ステップのリスト
         /// </summary>
-        public List<ISequenceStep> Steps
+        public List<SequenceStep> Steps
         {
             get => steps;
-            set => steps = value ?? new List<ISequenceStep>();
+            set => steps = value ?? new List<SequenceStep>();
         }
 
         /// <summary>
         /// ステップを追加
         /// </summary>
-        public void AddStep(ISequenceStep step)
+        public void AddStep(SequenceStep step)
         {
             if (step != null)
             {
@@ -136,7 +136,7 @@ namespace Core.Sequence
         /// <summary>
         /// 特定のインデックスのステップを取得
         /// </summary>
-        public ISequenceStep GetStep(int index)
+        public SequenceStep GetStep(int index)
         {
             if (index < 0 || index >= steps.Count)
             {

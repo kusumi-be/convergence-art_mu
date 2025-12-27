@@ -7,14 +7,14 @@ namespace Audio
 {
     /// <summary>
     /// シーケンス管理クラス
-    /// ISequenceStepのリストを管理し、順次実行する
+    /// SequenceStepのリストを管理し、順次実行する
     /// </summary>
     public class SequenceManager : MonoBehaviour
     {
         [Header("Sequence Settings")]
         [SerializeReference]
         [Tooltip("シーケンスステップのリスト（各管理クラス）")]
-        private List<ISequenceStep> steps = new List<ISequenceStep>();
+        private List<SequenceStep> steps = new List<SequenceStep>();
 
         [SerializeField]
         [Tooltip("各ステップ間の待機時間（秒）")]
@@ -122,7 +122,7 @@ namespace Audio
         /// <summary>
         /// ステップを追加（プログラムから動的に追加する場合）
         /// </summary>
-        public void AddStep(ISequenceStep step)
+        public void AddStep(SequenceStep step)
         {
             if (step != null)
             {

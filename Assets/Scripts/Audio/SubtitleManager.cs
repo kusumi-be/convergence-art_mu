@@ -11,7 +11,7 @@ namespace Audio
     /// 複数の字幕を管理し、シーケンスに従って順次表示する
     /// </summary>
     [Serializable]
-    public class SubtitleManager : ISequenceStep
+    public class SubtitleManager : SequenceStep
     {
         [SerializeField]
         [Tooltip("表示する字幕テキストのリスト")]
@@ -35,7 +35,7 @@ namespace Audio
         /// <summary>
         /// ステップを実行（現在のインデックスの字幕を表示）
         /// </summary>
-        public IEnumerator Execute()
+        public override IEnumerator Execute()
         {
             if (subtitles == null || subtitles.Count == 0)
             {

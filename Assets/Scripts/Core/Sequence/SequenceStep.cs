@@ -1,17 +1,19 @@
+using System;
 using System.Collections;
 
 namespace Core.Sequence
 {
     /// <summary>
-    /// シーケンスステップの基底インターフェース
+    /// シーケンスステップの基底抽象クラス
     /// 任意の処理を実行できる汎用的なステップ
     /// </summary>
-    public interface ISequenceStep
+    [Serializable]
+    public abstract class SequenceStep
     {
         /// <summary>
         /// ステップを実行する
         /// </summary>
         /// <returns>実行完了まで待機するコルーチン</returns>
-        IEnumerator Execute();
+        public abstract IEnumerator Execute();
     }
 }

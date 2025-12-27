@@ -12,9 +12,13 @@ namespace Audio
     public class SequenceManager : MonoBehaviour
     {
         [Header("Sequence Settings")]
-        [SerializeReference]
-        [Tooltip("シーケンスステップのリスト（各管理クラス）")]
-        private List<SequenceStep> steps = new List<SequenceStep>();
+        [SerializeField]
+        [Tooltip("オーディオ管理クラス")]
+        private AudioManager audioManager;
+
+        [SerializeField]
+        [Tooltip("字幕管理クラス")]
+        private SubtitleManager subtitleManager;
 
         [SerializeField]
         [Tooltip("各ステップ間の待機時間（秒）")]
@@ -49,7 +53,7 @@ namespace Audio
             // Inspector で currentStepIndex が変更されたら実行
             if (Application.isPlaying && currentStepIndex != previousStepIndex)
             {
-                if (currentStepIndex >= 0 && currentStepIndex < steps.Count)
+                if (sequenceController != null && currentStepIndex >= 0 && currentStepIndex < sequenceController.Count)
                 {
                     StartCoroutine(ExecuteStep(currentStepIndex));
                 }
@@ -69,19 +73,33 @@ namespace Audio
 
         /// <summary>
         /// ステップを準備
+        /// AudioManager と SubtitleManager を交互に追加してシーケンスを構築
         /// </summary>
         private void PrepareSteps()
         {
             sequenceController.ClearSteps();
 
-            if (steps == null)
-                return;
-
-            foreach (var step in steps)
+            if (audioManager == null || subtitleManager == null)
             {
-                if (step != null)
+                Debug.LogWarning("AudioManager or SubtitleManager is not assigned.");
+                return;
+            }
+
+            // オーディオと字幕のペア数を決定
+            int audioCount = audioManager.AudioClips?.Count ?? 0;
+            int subtitleCount = subtitleManager.Subtitles?.Count ?? 0;
+            int pairCount = Mathf.Max(audioCount, subtitleCount);
+
+            // 交互に追加（オーディオ → 字幕 → オーディオ → 字幕...）
+            for (int i = 0; i < pairCount; i++)
+            {
+                if (i < audioCount)
                 {
-                    sequenceController.AddStep(step);
+                    sequenceController.AddStep(audioManager);
+                }
+                if (i < subtitleCount)
+                {
+                    sequenceController.AddStep(subtitleManager);
                 }
             }
         }
@@ -139,23 +157,35 @@ namespace Audio
         }
 
         /// <summary>
-        /// ステップを追加（プログラムから動的に追加する場合）
+        /// AudioManager を取得
         /// </summary>
-        public void AddStep(SequenceStep step)
+        public AudioManager GetAudioManager()
         {
-            if (step != null)
-            {
-                steps.Add(step);
-            }
+            return audioManager;
         }
 
         /// <summary>
-        /// ステップをクリア
+        /// SubtitleManager を取得
         /// </summary>
-        public void ClearSteps()
+        public SubtitleManager GetSubtitleManager()
         {
-            steps.Clear();
-            sequenceController?.ClearSteps();
+            return subtitleManager;
+        }
+
+        /// <summary>
+        /// AudioManager を設定
+        /// </summary>
+        public void SetAudioManager(AudioManager manager)
+        {
+            audioManager = manager;
+        }
+
+        /// <summary>
+        /// SubtitleManager を設定
+        /// </summary>
+        public void SetSubtitleManager(SubtitleManager manager)
+        {
+            subtitleManager = manager;
         }
 
         /// <summary>
@@ -163,13 +193,13 @@ namespace Audio
         /// </summary>
         private IEnumerator ExecuteStep(int index)
         {
-            if (index < 0 || index >= steps.Count)
+            if (sequenceController == null || index < 0 || index >= sequenceController.Count)
             {
                 Debug.LogWarning($"Step index {index} is out of range.");
                 yield break;
             }
 
-            SequenceStep step = steps[index];
+            SequenceStep step = sequenceController.GetStep(index);
             if (step != null)
             {
                 yield return step.Execute();

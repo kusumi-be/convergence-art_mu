@@ -1,5 +1,5 @@
-using System;
 using System.Collections;
+using UnityEngine;
 
 namespace Core.Sequence
 {
@@ -7,8 +7,7 @@ namespace Core.Sequence
     /// シーケンスステップの基底クラス
     /// 任意の処理を実行できる汎用的なステップ
     /// </summary>
-    [Serializable]
-    public class SequenceStep
+    public class SequenceStep : MonoBehaviour
     {
         /// <summary>
         /// ステップを実行する

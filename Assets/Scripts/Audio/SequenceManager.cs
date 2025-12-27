@@ -13,12 +13,8 @@ namespace Audio
     {
         [Header("Sequence Settings")]
         [SerializeField]
-        [Tooltip("オーディオ管理クラス")]
-        private AudioManager audioManager;
-
-        [SerializeField]
-        [Tooltip("字幕管理クラス")]
-        private SubtitleManager subtitleManager;
+        [Tooltip("シーケンスステップのリスト（AudioManager、SubtitleManager など）")]
+        private List<SequenceStep> steps = new List<SequenceStep>();
 
         [SerializeField]
         [Tooltip("各ステップ間の待機時間（秒）")]
@@ -53,7 +49,7 @@ namespace Audio
             // Inspector で currentStepIndex が変更されたら実行
             if (Application.isPlaying && currentStepIndex != previousStepIndex)
             {
-                if (sequenceController != null && currentStepIndex >= 0 && currentStepIndex < sequenceController.Count)
+                if (currentStepIndex >= 0 && currentStepIndex < steps.Count)
                 {
                     StartCoroutine(ExecuteStep(currentStepIndex));
                 }
@@ -73,33 +69,19 @@ namespace Audio
 
         /// <summary>
         /// ステップを準備
-        /// AudioManager と SubtitleManager を交互に追加してシーケンスを構築
         /// </summary>
         private void PrepareSteps()
         {
             sequenceController.ClearSteps();
 
-            if (audioManager == null || subtitleManager == null)
-            {
-                Debug.LogWarning("AudioManager or SubtitleManager is not assigned.");
+            if (steps == null)
                 return;
-            }
 
-            // オーディオと字幕のペア数を決定
-            int audioCount = audioManager.AudioClips?.Count ?? 0;
-            int subtitleCount = subtitleManager.Subtitles?.Count ?? 0;
-            int pairCount = Mathf.Max(audioCount, subtitleCount);
-
-            // 交互に追加（オーディオ → 字幕 → オーディオ → 字幕...）
-            for (int i = 0; i < pairCount; i++)
+            foreach (var step in steps)
             {
-                if (i < audioCount)
+                if (step != null)
                 {
-                    sequenceController.AddStep(audioManager);
-                }
-                if (i < subtitleCount)
-                {
-                    sequenceController.AddStep(subtitleManager);
+                    sequenceController.AddStep(step);
                 }
             }
         }
@@ -157,35 +139,23 @@ namespace Audio
         }
 
         /// <summary>
-        /// AudioManager を取得
+        /// ステップを追加（プログラムから動的に追加する場合）
         /// </summary>
-        public AudioManager GetAudioManager()
+        public void AddStep(SequenceStep step)
         {
-            return audioManager;
+            if (step != null)
+            {
+                steps.Add(step);
+            }
         }
 
         /// <summary>
-        /// SubtitleManager を取得
+        /// ステップをクリア
         /// </summary>
-        public SubtitleManager GetSubtitleManager()
+        public void ClearSteps()
         {
-            return subtitleManager;
-        }
-
-        /// <summary>
-        /// AudioManager を設定
-        /// </summary>
-        public void SetAudioManager(AudioManager manager)
-        {
-            audioManager = manager;
-        }
-
-        /// <summary>
-        /// SubtitleManager を設定
-        /// </summary>
-        public void SetSubtitleManager(SubtitleManager manager)
-        {
-            subtitleManager = manager;
+            steps.Clear();
+            sequenceController?.ClearSteps();
         }
 
         /// <summary>
@@ -193,13 +163,13 @@ namespace Audio
         /// </summary>
         private IEnumerator ExecuteStep(int index)
         {
-            if (sequenceController == null || index < 0 || index >= sequenceController.Count)
+            if (index < 0 || index >= steps.Count)
             {
                 Debug.LogWarning($"Step index {index} is out of range.");
                 yield break;
             }
 
-            SequenceStep step = sequenceController.GetStep(index);
+            SequenceStep step = steps[index];
             if (step != null)
             {
                 yield return step.Execute();

@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,7 +9,6 @@ namespace Audio
     /// 音声管理クラス
     /// 複数の音声を管理し、シーケンスに従って順次再生する
     /// </summary>
-    [Serializable]
     public class AudioManager : SequenceStep
     {
         [SerializeField]

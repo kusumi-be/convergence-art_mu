@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,7 +9,6 @@ namespace Audio
     /// 字幕管理クラス
     /// 複数の字幕を管理し、シーケンスに従って順次表示する
     /// </summary>
-    [Serializable]
     public class SubtitleManager : SequenceStep
     {
         [SerializeField]

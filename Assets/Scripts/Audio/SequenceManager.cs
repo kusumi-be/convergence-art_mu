@@ -20,8 +20,14 @@ namespace Audio
         [Tooltip("各ステップ間の待機時間（秒）")]
         private float intervalBetweenSteps = 1f;
 
+        [Header("Manual Control")]
+        [SerializeField]
+        [Tooltip("現在のステップインデックス（Inspector で変更すると該当ステップを実行）")]
+        private int currentStepIndex = 0;
+
         private SequenceController sequenceController;
         private Coroutine playCoroutine;
+        private int previousStepIndex = -1;
 
         /// <summary>
         /// シーケンスコントローラー
@@ -36,6 +42,19 @@ namespace Audio
         private void Awake()
         {
             InitializeController();
+        }
+
+        private void OnValidate()
+        {
+            // Inspector で currentStepIndex が変更されたら実行
+            if (Application.isPlaying && currentStepIndex != previousStepIndex)
+            {
+                if (currentStepIndex >= 0 && currentStepIndex < steps.Count)
+                {
+                    StartCoroutine(ExecuteStep(currentStepIndex));
+                }
+                previousStepIndex = currentStepIndex;
+            }
         }
 
         /// <summary>
@@ -137,6 +156,24 @@ namespace Audio
         {
             steps.Clear();
             sequenceController?.ClearSteps();
+        }
+
+        /// <summary>
+        /// 特定のステップを実行
+        /// </summary>
+        private IEnumerator ExecuteStep(int index)
+        {
+            if (index < 0 || index >= steps.Count)
+            {
+                Debug.LogWarning($"Step index {index} is out of range.");
+                yield break;
+            }
+
+            SequenceStep step = steps[index];
+            if (step != null)
+            {
+                yield return step.Execute();
+            }
         }
     }
 }
